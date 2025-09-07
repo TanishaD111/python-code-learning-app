@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Button } from './ui/button';
 import { Textarea } from './ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Play, RotateCcw, CheckCircle } from 'lucide-react';
+import { loadPyodide } from 'pyodide';
 
 interface CodeEditorProps {
   initialCode?: string;
@@ -28,6 +29,38 @@ export function CodeEditor({
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [syntaxErrors, setSyntaxErrors] = useState([]);
   const [canSubmit, setCanSubmit] = useState(false);
+  const [pyodide, setPyodide] = useState(null);
+  const [isPyodideLoading, setIsPyodideLoading] = useState(false);
+  const pyodideRef = useRef(null);
+
+  // Initialize Pyodide (skip in development due to WebAssembly issues)
+  useEffect(() => {
+    const initializePyodide = async () => {
+      // Skip Pyodide in development mode to avoid WebAssembly errors
+      if (import.meta.env.DEV) {
+        console.log('Development mode: Using simple Python interpreter');
+        setIsPyodideLoading(false);
+        return;
+      }
+
+      if (!pyodideRef.current) {
+        setIsPyodideLoading(true);
+        try {
+          const pyodideInstance = await loadPyodide({
+            indexURL: "https://cdn.jsdelivr.net/pyodide/v0.28.2/full/"
+          });
+          pyodideRef.current = pyodideInstance;
+          setPyodide(pyodideInstance);
+          setIsPyodideLoading(false);
+        } catch (error) {
+          console.error('Failed to load Pyodide:', error);
+          setIsPyodideLoading(false);
+        }
+      }
+    };
+
+    initializePyodide();
+  }, []);
 
   // Load saved code and output when component mounts or exerciseId changes
   useEffect(() => {
@@ -194,9 +227,8 @@ export function CodeEditor({
       setTimeout(() => setIsSaved(false), 2000);
     }
     
-    // Check for syntax errors whenever code changes
-    const errors = checkSyntax(code);
-    setSyntaxErrors(errors);
+    // Pyodide will handle syntax checking, so we clear any previous errors
+    setSyntaxErrors([]);
   }, [code, exerciseId, initialCode, userId]);
 
   // Save output to localStorage whenever it changes
@@ -215,15 +247,38 @@ export function CodeEditor({
   }, [code, exerciseId]);
 
   // Simple Python interpreter for basic educational examples
-  const runPythonCode = (code: string): string => {
+  // Run Python code using Pyodide or fallback to simple interpreter
+  const runPythonCode = async (code: string): Promise<string> => {
     try {
-      
-      // Check for syntax errors first
-      const errors = checkSyntax(code);
-      if (errors.length > 0) {
-        return `Syntax Error: ${errors[0]}`;
+      // If Pyodide is available, use it
+      if (pyodideRef.current) {
+        // Clear previous output
+        pyodideRef.current.runPython(`
+          import sys
+          from io import StringIO
+          sys.stdout = StringIO()
+        `);
+
+        // Execute the user's code
+        pyodideRef.current.runPython(code);
+
+        // Capture the output
+        const output = pyodideRef.current.runPython("sys.stdout.getvalue()");
+        
+        return output || 'Code executed successfully (no output)';
+      } else {
+        // Fallback to simple interpreter for development
+        return runSimplePythonCode(code);
       }
-      
+    } catch (error) {
+      console.error('Error in runPythonCode:', error);
+      return `Error: ${error instanceof Error ? error.message : 'Something went wrong'}`;
+    }
+  };
+
+  // Simple Python interpreter fallback for development
+  const runSimplePythonCode = (code: string): string => {
+    try {
       const lines = code.split('\n').filter(line => line.trim());
       let output = '';
       let variables: { [key: string]: any } = {};
@@ -270,6 +325,12 @@ export function CodeEditor({
           }
         }
         
+        // Handle simple functions
+        else if (trimmed.startsWith('def ')) {
+          // For now, just acknowledge function definition
+          output += `Function defined: ${trimmed}\n`;
+        }
+        
         // Handle for loops (simple case)
         else if (trimmed.startsWith('for ')) {
           const match = trimmed.match(/for\s+(\w+)\s+in\s+range\((\d+)\):/);
@@ -294,10 +355,9 @@ export function CodeEditor({
         }
       }
 
-      const result = output || 'Code executed successfully (no output)';
-      return result;
+      return output || 'Code executed successfully (no output)';
     } catch (error) {
-      console.error('Error in runPythonCode:', error);
+      console.error('Error in runSimplePythonCode:', error);
       return `Error: ${error instanceof Error ? error.message : 'Something went wrong'}`;
     }
   };
@@ -306,25 +366,33 @@ export function CodeEditor({
     setIsRunning(true);
     setOutput('Running...');
     
-    // Simulate execution delay
-    setTimeout(() => {
-      try {
-        const result = runPythonCode(code);
-        setOutput(result);
-        setIsRunning(false);
-        onRunCode?.(code, result);
-      } catch (error) {
-        setOutput(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
-        setIsRunning(false);
-        onRunCode?.(code, `Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
-      }
-    }, 500);
+    try {
+      const result = await runPythonCode(code);
+      setOutput(result);
+      setIsRunning(false);
+      onRunCode?.(code, result);
+    } catch (error) {
+      setOutput(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      setIsRunning(false);
+      onRunCode?.(code, `Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
   };
 
-  const handleSubmitExercise = () => {
-    if (!code.trim() || !output) return;
-    setIsSubmitted(true);
-    onSubmitExercise?.(code, output);
+  const handleSubmitExercise = async () => {
+    if (!code.trim()) return;
+    
+    // Run the code to get fresh output for submission
+    setIsRunning(true);
+    try {
+      const result = await runPythonCode(code);
+      setOutput(result);
+      setIsSubmitted(true);
+      onSubmitExercise?.(code, result);
+    } catch (error) {
+      setOutput(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } finally {
+      setIsRunning(false);
+    }
   };
 
 
@@ -362,18 +430,18 @@ export function CodeEditor({
                 onClick={handleReset}
                 variant="outline"
                 size="sm"
-                disabled={isRunning}
+                disabled={isRunning || isPyodideLoading}
               >
                 <RotateCcw className="w-4 h-4 mr-2" />
                 Reset
               </Button>
               <Button
                 onClick={handleRunCode}
-                disabled={isRunning}
+                disabled={isRunning || isPyodideLoading}
                 size="sm"
               >
                 <Play className="w-4 h-4 mr-2" />
-                {isRunning ? 'Running...' : 'Run Code'}
+                {isPyodideLoading ? 'Loading Python...' : isRunning ? 'Running...' : 'Run Code'}
               </Button>
             </div>
           </CardTitle>
@@ -445,7 +513,7 @@ export function CodeEditor({
                 onClick={handleSubmitExercise}
                 className={canSubmit ? "text-white font-bold shadow-lg transition-all duration-200" : "bg-gray-400 cursor-not-allowed"}
                 size="sm"
-                disabled={!canSubmit}
+                disabled={!canSubmit || isPyodideLoading}
                 style={{ 
                   minHeight: '36px',
                   fontSize: '14px',
