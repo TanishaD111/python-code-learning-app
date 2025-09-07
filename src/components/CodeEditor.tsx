@@ -77,13 +77,9 @@ export function CodeEditor({
   // Load saved code and output when component mounts or exerciseId changes
   useEffect(() => {
     if (exerciseId && userId) {
-      console.log('CodeEditor loading code for:', exerciseId);
-      console.log('submittedResponses:', submittedResponses);
-      
       // First check database for submitted responses
       const dbResponse = submittedResponses[exerciseId];
       if (dbResponse) {
-        console.log('Found database response:', dbResponse);
         setCode(dbResponse.code);
         setOutput(dbResponse.output);
         return;
@@ -92,9 +88,6 @@ export function CodeEditor({
       // Fall back to localStorage
       const savedCode = localStorage.getItem(`exercise_code_${userId}_${exerciseId}`);
       const savedOutput = localStorage.getItem(`exercise_output_${userId}_${exerciseId}`);
-      
-      console.log('localStorage savedCode:', savedCode);
-      console.log('localStorage savedOutput:', savedOutput);
       
       if (savedCode) {
         setCode(savedCode);

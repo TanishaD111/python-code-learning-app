@@ -128,8 +128,6 @@ export default function App() {
           completedProjects: userProgress.completedProjects || []
         };
         
-        console.log('Loaded userProgress.submittedResponses:', userProgress.submittedResponses);
-        console.log('Updated progress.submittedResponses:', updatedProgress.submittedResponses);
         
         if (daysDifference === 1) {
           // Consecutive day - increase streak
@@ -314,7 +312,6 @@ export default function App() {
   };
 
   const handleSubmitProject = async (code: string, output: string) => {
-    console.log('handleSubmitProject called with:', { code, output, currentProject });
     if (!currentProject) return;
 
     // Store the submitted response with project- prefix
@@ -325,7 +322,6 @@ export default function App() {
     };
 
     const projectKey = `project-${currentProject}`;
-    console.log('Saving project with key:', projectKey);
 
     const updatedProgress = {
       ...progress,
@@ -334,8 +330,6 @@ export default function App() {
         [projectKey]: submittedResponse
       }
     };
-
-    console.log('Updated progress.submittedResponses:', updatedProgress.submittedResponses);
 
     setProgress(updatedProgress);
     await saveProgress(updatedProgress);
@@ -618,7 +612,6 @@ export default function App() {
             </TabsContent>
 
             <TabsContent value="projects" className="space-y-6">
-              {console.log('Passing completedProjects to MiniProjects:', progress.completedProjects)}
               <MiniProjects
                 completedProjects={progress.completedProjects}
                 onCompleteProject={handleCompleteProject}
