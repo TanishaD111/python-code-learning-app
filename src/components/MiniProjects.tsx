@@ -49,6 +49,7 @@ const projects: Project[] = [
 
 export function MiniProjects({ completedProjects, onCompleteProject, onStartProject }: MiniProjectsProps) {
   const [activeProject, setActiveProject] = useState<string | null>(null);
+  
 
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty) {
@@ -72,6 +73,7 @@ export function MiniProjects({ completedProjects, onCompleteProject, onStartProj
         {projects.map((project) => {
           const isCompleted = completedProjects.includes(project.id);
           const IconComponent = project.icon;
+          
           
           return (
             <Card key={project.id} className={`transition-all ${isCompleted ? 'border-green-200 bg-green-50' : ''}`}>

@@ -8,6 +8,9 @@ interface ProjectCodeEditorProps {
   projectId: string;
   onBack: () => void;
   onComplete: () => void;
+  onSubmitExercise?: (code: string, output: string) => void;
+  userId?: string;
+  submittedResponses?: { [exerciseId: string]: { code: string; output: string; submittedAt: string } };
 }
 
 interface ProjectTemplate {
@@ -23,46 +26,46 @@ const projectTemplates: { [key: string]: ProjectTemplate } = {
   madlibs: {
     id: 'madlibs',
     title: 'MadLibs Generator',
-    description: 'Create a fun story generator that asks users for words and creates a story!',
+    description: 'Create a fun story generator using predefined word lists!',
     startingCode: `# MadLibs Generator
-# This project will create funny stories by asking users for words
+# This project will create funny stories using predefined word lists
 
-# Step 1: Create variables to store user input
-# Ask the user for different types of words
-# Use input() function to get user input
+# Step 1: Create lists of different types of words
+# Create lists for names, adjectives, verbs, animals, places, etc.
 
 # Example:
-# name = input("Enter a name: ")
-# adjective = input("Enter an adjective: ")
+# names = ["Alice", "Bob", "Charlie", "Diana"]
+# adjectives = ["brave", "silly", "mysterious", "colorful"]
+# animals = ["dragon", "unicorn", "elephant", "butterfly"]
 
 # Step 2: Create your story template
-# Use f-strings or string formatting to insert the words
+# Use f-strings or string formatting to insert random words
 
-# Step 3: Print the final story
-# Use print() to display the completed story
+# Step 3: Print multiple story variations
+# Use print() to display different story combinations
 
 # Your code here:
 `,
     requirements: [
-      'Ask user for at least 3 different types of words (noun, adjective, verb, etc.)',
-      'Use input() function to get user input',
-      'Create a story template using the collected words',
-      'Print the final story using print()',
-      'Make it creative and fun!'
+      'Create at least 3 different word lists (names, adjectives, verbs, etc.)',
+      'Each list should have at least 4 words',
+      'Create a story template using the word lists',
+      'Generate and print at least 3 different story variations',
+      'Use random selection or indexing to pick words from lists'
     ],
     hints: [
-      'Use input("Your question: ") to ask for user input',
-      'Store each input in a variable with a descriptive name',
-      'Use f-strings like f"Once upon a time, there was a {adjective} {noun}"',
-      'You can ask for: name, adjective, verb, animal, place, etc.'
+      'Create lists like: names = ["Alice", "Bob", "Charlie"]',
+      'Use f-strings like f"Once upon a time, {names[0]} met a {adjectives[1]} {animals[2]}"',
+      'You can use random.choice() or just pick different indices like [0], [1], [2]',
+      'Try creating multiple story templates for variety'
     ]
   },
   quiz: {
     id: 'quiz',
     title: 'Python Quiz Game',
-    description: 'Build an interactive quiz game to test Python knowledge!',
+    description: 'Build a quiz game that automatically tests Python knowledge!',
     startingCode: `# Python Quiz Game
-# Create an interactive quiz with questions and answers
+# Create a quiz that automatically tests Python knowledge
 
 # Step 1: Create a list of questions and answers
 # Each question should have multiple choice options
@@ -79,73 +82,73 @@ const projectTemplates: { [key: string]: ProjectTemplate } = {
 # Step 2: Create a function to display questions
 # Loop through questions and show options
 
-# Step 3: Keep track of score
-# Count correct answers and display final score
+# Step 3: Create predefined answers
+# Use a list of answers to simulate user responses
 
-# Step 4: Add user interaction
-# Let users input their answers
+# Step 4: Keep track of score
+# Count correct answers and display final score
 
 # Your code here:
 `,
     requirements: [
       'Create at least 5 quiz questions about Python',
       'Each question should have multiple choice answers (A, B, C, D)',
-      'Keep track of the user\'s score',
-      'Display the final score at the end',
+      'Create a list of predefined answers to simulate user responses',
+      'Keep track of the score and display the final result',
       'Use functions to organize your code'
     ],
     hints: [
       'Use a list of dictionaries to store questions and answers',
       'Create a function like display_question(question) to show each question',
-      'Use a for loop to go through all questions',
-      'Keep a score variable and increment it for correct answers',
-      'Use input() to get user answers'
+      'Use a list like answers = ["A", "B", "A", "C", "D"] for predefined responses',
+      'Use a for loop to go through all questions and check answers',
+      'Keep a score variable and increment it for correct answers'
     ]
   },
   wordle: {
     id: 'wordle',
     title: 'Word Guessing Game',
-    description: 'Create a Wordle-style word guessing game with hints!',
+    description: 'Create a Wordle-style game that automatically tests word guesses!',
     startingCode: `# Word Guessing Game (Wordle-style)
-# Create a game where players guess a secret word
+# Create a game that automatically tests word guesses
 
 # Step 1: Choose a secret word
-# Pick a word that players need to guess
+# Pick a word that needs to be guessed
 
-# Step 2: Create a guessing loop
-# Allow players to make multiple guesses
+# Step 2: Create a list of guesses
+# Define a list of words to test against the secret word
 
-# Step 3: Provide feedback
-# Tell players which letters are correct and in the right position
-# Tell players which letters are correct but in the wrong position
-# Tell players which letters are not in the word
+# Step 3: Create feedback function
+# Tell which letters are correct and in the right position
+# Tell which letters are correct but in the wrong position
+# Tell which letters are not in the word
 
-# Step 4: Limit guesses
-# Give players a limited number of attempts
+# Step 4: Test all guesses
+# Loop through the guess list and provide feedback for each
 
-# Step 5: Win/lose conditions
-# Check if player guessed correctly or ran out of attempts
+# Step 5: Display results
+# Show the feedback for each guess and final result
 
 # Your code here:
 `,
     requirements: [
       'Choose a secret word (5-6 letters recommended)',
-      'Allow players to make guesses',
-      'Provide feedback on each guess (correct position, wrong position, not in word)',
-      'Limit the number of guesses (e.g., 6 attempts)',
-      'Display win/lose message at the end'
+      'Create a list of at least 4 different guess words',
+      'Create a function to provide feedback on each guess',
+      'Show feedback for each guess (correct position, wrong position, not in word)',
+      'Display the results for all guesses'
     ],
     hints: [
-      'Use a string for the secret word',
-      'Create a loop that runs for a limited number of attempts',
-      'Compare each letter of the guess with the secret word',
-      'Use different symbols or colors to show feedback',
-      'Consider using lists to track which letters have been guessed'
+      'Use a string for the secret word like secret = "PYTHON"',
+      'Create a list like guesses = ["WORDS", "HELLO", "PYTHON", "CODING"]',
+      'Create a function that compares each letter position',
+      'Use symbols like ✓ for correct position, ~ for wrong position, ✗ for not in word',
+      'Loop through your guess list and test each one'
     ]
   }
 };
 
-export function ProjectCodeEditor({ projectId, onBack, onComplete }: ProjectCodeEditorProps) {
+export function ProjectCodeEditor({ projectId, onBack, onComplete, onSubmitExercise, userId, submittedResponses }: ProjectCodeEditorProps) {
   const [showHints, setShowHints] = useState(false);
   const [showRequirements, setShowRequirements] = useState(true);
   
@@ -259,24 +262,14 @@ export function ProjectCodeEditor({ projectId, onBack, onComplete }: ProjectCode
           <CodeEditor 
             initialCode={project.startingCode}
             exerciseId={`project-${projectId}`}
+            onSubmitExercise={onSubmitExercise}
+            onComplete={onComplete}
+            userId={userId}
+            submittedResponses={submittedResponses}
           />
         </CardContent>
       </Card>
 
-      {/* Complete Project Button */}
-      <Card>
-        <CardContent className="pt-6">
-          <div className="text-center space-y-4">
-            <p className="text-muted-foreground">
-              When you're happy with your project, click below to mark it as complete!
-            </p>
-            <Button onClick={onComplete} size="lg" className="bg-green-600 hover:bg-green-700">
-              <CheckCircle className="w-5 h-5 mr-2" />
-              Complete Project
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
     </div>
   );
 }

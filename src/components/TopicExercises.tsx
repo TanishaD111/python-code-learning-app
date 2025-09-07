@@ -508,33 +508,33 @@ const exerciseData: { [key: string]: Exercise[] } = {
     },
     {
       id: 'math-9',
-      title: 'Getting User Input',
-      description: 'Ask the user for their name and greet them.',
+      title: 'String Variables and Greetings',
+      description: 'Create a name variable and print a greeting.',
       difficulty: 'Beginner',
       xpReward: 12,
-      startingCode: '# Ask user for their name\n# Print a greeting with their name\n',
-      solution: 'name = input("What is your name? ")\nprint("Hello, " + name + "!")',
-      hint: 'Use input() to get user input as a string'
+      startingCode: '# Create a variable with your name\n# Print a greeting with your name\n',
+      solution: 'name = "Alex"\nprint("Hello, " + name + "!")',
+      hint: 'Use quotes around text values and string concatenation with +'
     },
     {
       id: 'math-10',
-      title: 'Input Number Conversion',
-      description: 'Get a number from user input and convert it.',
+      title: 'String to Number Conversion',
+      description: 'Convert a string to an integer and use it.',
       difficulty: 'Intermediate',
       xpReward: 15,
-      startingCode: '# Ask user for their age, convert to integer, print it\n',
-      solution: 'age_str = input("Enter your age: ")\nage = int(age_str)\nprint("You are", age, "years old")',
-      hint: 'Use int() to convert string input to integer'
+      startingCode: '# Create a string variable with a number\n# Convert it to integer and print it\n',
+      solution: 'age_str = "25"\nage = int(age_str)\nprint("You are", age, "years old")',
+      hint: 'Use int() to convert string to integer'
     },
     {
       id: 'math-11',
       title: 'Simple Calculator',
-      description: 'Get two numbers from user and add them.',
+      description: 'Add two numbers together and display the result.',
       difficulty: 'Intermediate',
       xpReward: 15,
-      startingCode: '# Get two numbers from user, convert to int, add and print result\n',
-      solution: 'num1 = int(input("Enter first number: "))\nnum2 = int(input("Enter second number: "))\nresult = num1 + num2\nprint("Sum:", result)',
-      hint: 'Get input, convert with int(), then add the numbers'
+      startingCode: '# Create two number variables\n# Add them together and print the result\n',
+      solution: 'num1 = 15\nnum2 = 27\nresult = num1 + num2\nprint("Sum:", result)',
+      hint: 'Use + operator to add numbers together'
     },
     {
       id: 'math-12',
@@ -598,23 +598,23 @@ const exerciseData: { [key: string]: Exercise[] } = {
     },
     {
       id: 'math-18',
-      title: 'Float Input and Calculations',
-      description: 'Work with decimal numbers from user input.',
+      title: 'Float Calculations',
+      description: 'Work with decimal numbers and calculate squares.',
       difficulty: 'Advanced',
       xpReward: 18,
-      startingCode: '# Get a decimal number from user, calculate its square\n',
-      solution: 'num = float(input("Enter a decimal number: "))\nsquare = num ** 2\nprint(f"The square of {num} is {square}")',
-      hint: 'Use float() to convert input to decimal number'
+      startingCode: '# Create a decimal number variable, calculate its square\n',
+      solution: 'num = 3.5\nsquare = num ** 2\nprint(f"The square of {num} is {square}")',
+      hint: 'Use ** for exponentiation and f-strings for formatting'
     },
     {
       id: 'math-19',
       title: 'Advanced Calculator',
-      description: 'Create a calculator that handles multiple operations.',
+      description: 'Create a calculator that performs multiple operations.',
       difficulty: 'Advanced',
       xpReward: 20,
-      startingCode: '# Get two numbers and perform all basic operations\n# Display results nicely formatted\n',
-      solution: 'a = float(input("Enter first number: "))\nb = float(input("Enter second number: "))\nprint(f"{a} + {b} = {a + b}")\nprint(f"{a} - {b} = {a - b}")\nprint(f"{a} * {b} = {a * b}")\nprint(f"{a} / {b} = {a / b}")',
-      hint: 'Use float() for decimal numbers and f-strings for formatting'
+      startingCode: '# Create two decimal numbers and perform all basic operations\n# Display results nicely formatted\n',
+      solution: 'a = 12.5\nb = 3.2\nprint(f"{a} + {b} = {a + b}")\nprint(f"{a} - {b} = {a - b}")\nprint(f"{a} * {b} = {a * b}")\nprint(f"{a} / {b} = {a / b}")',
+      hint: 'Use f-strings for formatting and basic math operators'
     },
     {
       id: 'math-20',
@@ -770,13 +770,13 @@ const exerciseData: { [key: string]: Exercise[] } = {
     },
     {
       id: 'bool-15',
-      title: 'User Input with Conditionals',
-      description: 'Get user input and make decisions based on it.',
+      title: 'Age-Based Conditionals',
+      description: 'Make decisions based on age values.',
       difficulty: 'Advanced',
       xpReward: 20,
-      startingCode: '# Ask user for their age, determine if they can vote\n',
-      solution: 'age = int(input("Enter your age: "))\nif age >= 18:\n    print("You can vote!")\nelse:\n    print("You cannot vote yet")',
-      hint: 'Remember to convert input to integer with int()'
+      startingCode: '# Create an age variable, determine if they can vote\n',
+      solution: 'age = 20\nif age >= 18:\n    print("You can vote!")\nelse:\n    print("You cannot vote yet")',
+      hint: 'Use >= operator to check if age is 18 or older'
     },
     {
       id: 'bool-16',
@@ -784,9 +784,9 @@ const exerciseData: { [key: string]: Exercise[] } = {
       description: 'Make decisions based on string content.',
       difficulty: 'Advanced',
       xpReward: 20,
-      startingCode: '# Ask user for favorite color, respond accordingly\n',
-      solution: 'color = input("What\'s your favorite color? ").lower()\nif color == "blue":\n    print("Blue is calming!")\nelif color == "red":\n    print("Red is energetic!")\nelif color == "green":\n    print("Green is natural!")\nelse:\n    print("Great choice!")',
-      hint: 'Use .lower() to handle different capitalizations'
+      startingCode: '# Create a color variable, respond accordingly\n',
+      solution: 'color = "blue"\nif color == "blue":\n    print("Blue is calming!")\nelif color == "red":\n    print("Red is energetic!")\nelif color == "green":\n    print("Green is natural!")\nelse:\n    print("Great choice!")',
+      hint: 'Use == to compare strings and elif for multiple conditions'
     },
     {
       id: 'bool-17',
@@ -815,7 +815,7 @@ const exerciseData: { [key: string]: Exercise[] } = {
       difficulty: 'Advanced',
       xpReward: 25,
       startingCode: '# Create a simple login: correct username is "admin", password is "1234"\n',
-      solution: 'username = input("Enter username: ")\npassword = input("Enter password: ")\n\nif username == "admin" and password == "1234":\n    print("Login successful!")\nelse:\n    print("Invalid credentials")',
+      solution: 'username = "admin"\npassword = "1234"\n\nif username == "admin" and password == "1234":\n    print("Login successful!")\nelse:\n    print("Invalid credentials")',
       hint: 'Use "and" to check both username and password are correct'
     },
     {
@@ -825,7 +825,7 @@ const exerciseData: { [key: string]: Exercise[] } = {
       difficulty: 'Advanced',
       xpReward: 25,
       startingCode: '# Movie recommendation system based on age and genre preference\n',
-      solution: 'age = int(input("Enter your age: "))\ngenre = input("Preferred genre (action/comedy/drama): ").lower()\n\nif age < 13:\n    print("Recommended: Family movies")\nelif age < 18:\n    if genre == "action":\n        print("Recommended: Teen action movies")\n    elif genre == "comedy":\n        print("Recommended: Teen comedies")\n    else:\n        print("Recommended: Coming-of-age films")\nelse:\n    if genre == "action":\n        print("Recommended: Action blockbusters")\n    elif genre == "comedy":\n        print("Recommended: Adult comedies")\n    elif genre == "drama":\n        print("Recommended: Award-winning dramas")\n    else:\n        print("Recommended: Popular movies")',
+      solution: 'age = 16\ngenre = "action"\n\nif age < 13:\n    print("Recommended: Family movies")\nelif age < 18:\n    if genre == "action":\n        print("Recommended: Teen action movies")\n    elif genre == "comedy":\n        print("Recommended: Teen comedies")\n    else:\n        print("Recommended: Coming-of-age films")\nelse:\n    if genre == "action":\n        print("Recommended: Action blockbusters")\n    elif genre == "comedy":\n        print("Recommended: Adult comedies")\n    elif genre == "drama":\n        print("Recommended: Award-winning dramas")\n    else:\n        print("Recommended: Popular movies")',
       hint: 'Use nested if statements to create a decision tree'
     }
   ],
@@ -932,13 +932,13 @@ const exerciseData: { [key: string]: Exercise[] } = {
     },
     {
       id: 'loop-11',
-      title: 'While Loop with User Input',
-      description: 'Keep asking for input until user enters "quit".',
+      title: 'While Loop with List Processing',
+      description: 'Process a list of items until you find a specific value.',
       difficulty: 'Intermediate',
       xpReward: 18,
-      startingCode: '# Keep asking for input until user types "quit"\n',
-      solution: 'user_input = ""\nwhile user_input != "quit":\n    user_input = input("Enter something (or \'quit\' to stop): ")\n    if user_input != "quit":\n        print("You entered:", user_input)',
-      hint: 'Initialize the variable before the while loop'
+      startingCode: '# Process a list of items until you find "stop"\n',
+      solution: 'items = ["hello", "world", "python", "stop", "coding"]\nindex = 0\nwhile index < len(items) and items[index] != "stop":\n    print("Processing:", items[index])\n    index += 1\nprint("Found stop signal!")',
+      hint: 'Use index to track position and check both list length and item value'
     },
     {
       id: 'loop-12',

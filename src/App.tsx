@@ -123,8 +123,13 @@ export default function App() {
         let updatedProgress = { 
           ...userProgress,
           // Ensure submittedResponses exists for existing users
-          submittedResponses: userProgress.submittedResponses || {}
+          submittedResponses: userProgress.submittedResponses || {},
+          // Ensure completedProjects exists for existing users
+          completedProjects: userProgress.completedProjects || []
         };
+        
+        console.log('Loaded userProgress.submittedResponses:', userProgress.submittedResponses);
+        console.log('Updated progress.submittedResponses:', updatedProgress.submittedResponses);
         
         if (daysDifference === 1) {
           // Consecutive day - increase streak
@@ -137,10 +142,12 @@ export default function App() {
         updatedProgress.lastLoginDate = today;
         updatedProgress.level = calculateLevel(updatedProgress.xp);
         
+        console.log('Setting progress to:', updatedProgress);
+        console.log('completedProjects in updatedProgress:', updatedProgress.completedProjects);
         setProgress(updatedProgress);
         
-        // Save updated progress if streak changed or if we added submittedResponses
-        if (daysDifference >= 1 || !userProgress.submittedResponses) {
+        // Save updated progress if streak changed or if we added missing fields
+        if (daysDifference >= 1 || !userProgress.submittedResponses || !userProgress.completedProjects) {
           await saveUserProgress(userId, updatedProgress);
         }
       } else {
@@ -306,19 +313,57 @@ export default function App() {
     }
   };
 
+  const handleSubmitProject = async (code: string, output: string) => {
+    console.log('handleSubmitProject called with:', { code, output, currentProject });
+    if (!currentProject) return;
+
+    // Store the submitted response with project- prefix
+    const submittedResponse = {
+      code,
+      output,
+      submittedAt: new Date().toISOString()
+    };
+
+    const projectKey = `project-${currentProject}`;
+    console.log('Saving project with key:', projectKey);
+
+    const updatedProgress = {
+      ...progress,
+      submittedResponses: {
+        ...progress.submittedResponses,
+        [projectKey]: submittedResponse
+      }
+    };
+
+    console.log('Updated progress.submittedResponses:', updatedProgress.submittedResponses);
+
+    setProgress(updatedProgress);
+    await saveProgress(updatedProgress);
+    
+    toast.success('Project code saved successfully!');
+  };
+
   const handleCompleteProject = async (projectId: string) => {
+    console.log('handleCompleteProject called with projectId:', projectId);
+    console.log('Current progress.completedProjects:', progress.completedProjects);
+    
     if (!progress.completedProjects.includes(projectId)) {
       const updatedProgress = {
         ...progress,
         completedProjects: [...progress.completedProjects, projectId]
       };
+      
+      console.log('Updated progress with completedProjects:', updatedProgress.completedProjects);
+      
       setProgress(updatedProgress);
       await saveProgress(updatedProgress);
       
       const xpRewards = { madlibs: 50, quiz: 75, wordle: 100 };
       const xpReward = xpRewards[projectId as keyof typeof xpRewards] || 50;
       await addXp(xpReward);
-      toast.success(`🚀 Project completed! Amazing work!`);
+      toast.success(`🚀 Project completed! Amazing work! +${xpReward} XP earned!`);
+    } else {
+      console.log('Project already completed');
     }
   };
 
@@ -483,6 +528,7 @@ export default function App() {
                   exerciseId={currentExercise.id}
                   isExerciseCompleted={progress.completedExercises.includes(currentExercise.id)}
                   userId={user?.uid || ''}
+                  submittedResponses={progress.submittedResponses}
                 />
               </div>
             </CardContent>
@@ -492,9 +538,14 @@ export default function App() {
             projectId={currentProject}
             onBack={handleBackToProjects}
             onComplete={() => {
+              console.log('onComplete called for project:', currentProject);
               handleCompleteProject(currentProject);
               setCurrentProject(null);
+              setActiveTab('projects');
             }}
+            onSubmitExercise={handleSubmitProject}
+            userId={user?.uid}
+            submittedResponses={progress.submittedResponses}
           />
         ) : (
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -567,6 +618,7 @@ export default function App() {
             </TabsContent>
 
             <TabsContent value="projects" className="space-y-6">
+              {console.log('Passing completedProjects to MiniProjects:', progress.completedProjects)}
               <MiniProjects
                 completedProjects={progress.completedProjects}
                 onCompleteProject={handleCompleteProject}

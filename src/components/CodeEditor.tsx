@@ -9,18 +9,22 @@ interface CodeEditorProps {
   initialCode?: string;
   onRunCode?: (code: string, output: string) => void;
   onSubmitExercise?: (code: string, output: string) => void;
+  onComplete?: () => void; // Add onComplete for project completion
   exerciseId?: string; // Add exerciseId to save code per exercise
   isExerciseCompleted?: boolean; // Track if exercise is already completed
   userId?: string; // Add userId to make localStorage user-specific
+  submittedResponses?: { [exerciseId: string]: { code: string; output: string; submittedAt: string } };
 }
 
 export function CodeEditor({ 
   initialCode = '', 
   onRunCode, 
   onSubmitExercise, 
+  onComplete,
   exerciseId, 
   isExerciseCompleted = false, 
-  userId = ''
+  userId = '',
+  submittedResponses = {}
 }: CodeEditorProps) {
   const [code, setCode] = useState(initialCode);
   const [output, setOutput] = useState('');
@@ -31,17 +35,18 @@ export function CodeEditor({
   const [canSubmit, setCanSubmit] = useState(false);
   const [pyodide, setPyodide] = useState(null);
   const [isPyodideLoading, setIsPyodideLoading] = useState(false);
+  const [isWaitingForInput, setIsWaitingForInput] = useState(false);
+  const [inputPrompt, setInputPrompt] = useState('');
+  const [inputValue, setInputValue] = useState('');
+  const [inputQueue, setInputQueue] = useState<string[]>([]);
+  const inputResolveRef = useRef<((value: string) => void) | null>(null);
   const pyodideRef = useRef(null);
 
-  // Initialize Pyodide (skip in development due to WebAssembly issues)
+  // Initialize Pyodide
   useEffect(() => {
     const initializePyodide = async () => {
-      // Skip Pyodide in development mode to avoid WebAssembly errors
-      if (import.meta.env.DEV) {
-        console.log('Development mode: Using simple Python interpreter');
-        setIsPyodideLoading(false);
-        return;
-      }
+      // Enable Pyodide in both development and production for input() support
+      console.log('Initializing Pyodide...');
 
       if (!pyodideRef.current) {
         setIsPyodideLoading(true);
@@ -49,6 +54,13 @@ export function CodeEditor({
           const pyodideInstance = await loadPyodide({
             indexURL: "https://cdn.jsdelivr.net/pyodide/v0.28.2/full/"
           });
+          
+          // Set up basic Python environment
+          pyodideInstance.runPython(`
+            import sys
+            from io import StringIO
+          `);
+          
           pyodideRef.current = pyodideInstance;
           setPyodide(pyodideInstance);
           setIsPyodideLoading(false);
@@ -65,8 +77,24 @@ export function CodeEditor({
   // Load saved code and output when component mounts or exerciseId changes
   useEffect(() => {
     if (exerciseId && userId) {
+      console.log('CodeEditor loading code for:', exerciseId);
+      console.log('submittedResponses:', submittedResponses);
+      
+      // First check database for submitted responses
+      const dbResponse = submittedResponses[exerciseId];
+      if (dbResponse) {
+        console.log('Found database response:', dbResponse);
+        setCode(dbResponse.code);
+        setOutput(dbResponse.output);
+        return;
+      }
+      
+      // Fall back to localStorage
       const savedCode = localStorage.getItem(`exercise_code_${userId}_${exerciseId}`);
       const savedOutput = localStorage.getItem(`exercise_output_${userId}_${exerciseId}`);
+      
+      console.log('localStorage savedCode:', savedCode);
+      console.log('localStorage savedOutput:', savedOutput);
       
       if (savedCode) {
         setCode(savedCode);
@@ -77,7 +105,7 @@ export function CodeEditor({
         setOutput(savedOutput);
       }
     }
-  }, [exerciseId, initialCode, userId]);
+  }, [exerciseId, initialCode, userId, submittedResponses]);
 
   // Check for syntax errors
   const checkSyntax = (code: string): string[] => {
@@ -212,6 +240,9 @@ export function CodeEditor({
     } else if (exerciseId.startsWith('func-')) {
       return codeLines.some(line => line.includes('def')) && 
              codeLines.some(line => line.includes('('));
+    } else if (exerciseId.startsWith('project-')) {
+      // Projects have no validation requirements - always allow submission
+      return true;
     }
     
     return false;
@@ -259,20 +290,90 @@ export function CodeEditor({
           sys.stdout = StringIO()
         `);
 
-        // Execute the user's code
-        pyodideRef.current.runPython(code);
-
-        // Capture the output
-        const output = pyodideRef.current.runPython("sys.stdout.getvalue()");
-        
-        return output || 'Code executed successfully (no output)';
+        // Execute the user's code with input handling
+        return await executeWithInputHandling(code);
       } else {
-        // Fallback to simple interpreter for development
+        // Fallback to simple interpreter if Pyodide is not available
+        console.log('Pyodide not available, using simple interpreter');
         return runSimplePythonCode(code);
       }
     } catch (error) {
       console.error('Error in runPythonCode:', error);
       return `Error: ${error instanceof Error ? error.message : 'Something went wrong'}`;
+    }
+  };
+
+  // Execute Python code with input handling
+  const executeWithInputHandling = async (code: string): Promise<string> => {
+    let output = '';
+    
+    // Preprocess the code to handle input() calls
+    const processedCode = await preprocessCodeForInput(code);
+    
+    try {
+      // Execute the preprocessed code
+      pyodideRef.current.runPython(processedCode);
+      
+      // If successful, capture output and return
+      output = pyodideRef.current.runPython("sys.stdout.getvalue()");
+      return output || 'Code executed successfully (no output)';
+      
+    } catch (error) {
+      console.error('Error in executeWithInputHandling:', error);
+      throw error;
+    }
+  };
+
+  // Preprocess code to handle input() calls
+  const preprocessCodeForInput = async (code: string): Promise<string> => {
+    let processedCode = code;
+    
+    // Find all input() calls and replace them with user input
+    const inputRegex = /input\s*\(\s*([^)]*)\s*\)/g;
+    let match;
+    const inputMatches = [];
+    
+    // First, collect all input() calls
+    while ((match = inputRegex.exec(code)) !== null) {
+      inputMatches.push({
+        fullMatch: match[0],
+        prompt: match[1] ? match[1].replace(/['"]/g, '') : '', // Remove quotes
+        index: match.index
+      });
+    }
+    
+    // Process each input() call sequentially
+    for (const inputMatch of inputMatches) {
+      // Show input prompt and wait for user input
+      setIsWaitingForInput(true);
+      setInputPrompt(inputMatch.prompt);
+      
+      // Wait for user to provide input
+      const userInput = await waitForUserInput();
+      
+      // Replace the input() call with the actual value
+      processedCode = processedCode.replace(inputMatch.fullMatch, `"${userInput}"`);
+    }
+    
+    return processedCode;
+  };
+
+  // Wait for user input
+  const waitForUserInput = (): Promise<string> => {
+    return new Promise((resolve) => {
+      inputResolveRef.current = resolve;
+    });
+  };
+
+  // Handle input submission
+  const handleInputSubmit = () => {
+    if (inputValue.trim() && inputResolveRef.current) {
+      const value = inputValue.trim();
+      setInputValue('');
+      setIsWaitingForInput(false);
+      setInputPrompt('');
+      inputResolveRef.current(value);
+      inputResolveRef.current = null;
     }
   };
 
@@ -331,6 +432,15 @@ export function CodeEditor({
           output += `Function defined: ${trimmed}\n`;
         }
         
+        // Handle input() calls in development mode
+        else if (trimmed.includes('input(')) {
+          const match = trimmed.match(/input\(([^)]*)\)/);
+          if (match) {
+            const prompt = match[1] ? match[1].slice(1, -1) : '';
+            output += `${prompt}[Simulated input: "test_input"]\n`;
+          }
+        }
+        
         // Handle for loops (simple case)
         else if (trimmed.startsWith('for ')) {
           const match = trimmed.match(/for\s+(\w+)\s+in\s+range\((\d+)\):/);
@@ -387,7 +497,20 @@ export function CodeEditor({
       const result = await runPythonCode(code);
       setOutput(result);
       setIsSubmitted(true);
+      
+      // Save to database via the parent component
       onSubmitExercise?.(code, result);
+      
+      // Also save to localStorage for immediate access
+      if (exerciseId && userId) {
+        localStorage.setItem(`exercise_code_${userId}_${exerciseId}`, code);
+        localStorage.setItem(`exercise_output_${userId}_${exerciseId}`, result);
+      }
+      
+      // If this is a project, also mark it as complete
+      if (exerciseId && exerciseId.startsWith('project-') && onComplete) {
+        onComplete();
+      }
     } catch (error) {
       setOutput(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
@@ -467,6 +590,46 @@ export function CodeEditor({
           </pre>
         </CardContent>
       </Card>
+
+      {/* User Input Section */}
+      {isWaitingForInput && (
+        <Card className="border-blue-200 bg-blue-50">
+          <CardHeader>
+            <CardTitle className="text-blue-700 flex items-center gap-2">
+              📝 User Input Required
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              <p className="text-blue-600 font-medium">
+                {inputPrompt || "Enter your input:"}
+              </p>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={inputValue}
+                  onChange={(e) => setInputValue(e.target.value)}
+                  onKeyPress={(e) => {
+                    if (e.key === 'Enter') {
+                      handleInputSubmit();
+                    }
+                  }}
+                  className="flex-1 px-3 py-2 border border-blue-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Type your input here..."
+                  autoFocus
+                />
+                <Button
+                  onClick={handleInputSubmit}
+                  className="bg-blue-600 hover:bg-blue-700"
+                  disabled={!inputValue.trim()}
+                >
+                  Submit
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Syntax Errors Display */}
       {syntaxErrors.length > 0 && (
